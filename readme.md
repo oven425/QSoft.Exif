@@ -1,0 +1,1 @@
+[reference gps exif of jpg]("https://www.flickr.com/photos/137596559@N07/54362611843")
