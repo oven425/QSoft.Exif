@@ -32,21 +32,23 @@ while (true)
         break;
     }
 }
+
+
 ParseTiff();
-void ParseTiff()
+(TagFormat format, int length, int begin) ParseTiff()
 {
     //https://www.media.mit.edu/pia/Research/deepview/exif.html
     var enterycount = BitConverter.ToInt16(br.ReadBytes(2).Reverse().ToArray(), 0);
     var tagname = BitConverter.ToInt16(br.ReadBytes(2).Reverse().ToArray(), 0);
-    var tagtype = br.ReadBytes(2);
-    var tagcount = BitConverter.ToInt32(br.ReadBytes(4).Reverse().ToArray(), 0);
-    var tagvalue = BitConverter.ToInt32(br.ReadBytes(4).Reverse().ToArray(), 0);
+    var tagformat = (TagFormat)BitConverter.ToInt16(br.ReadBytes(2).Reverse().ToArray(), 0);
+    var tagatalength = BitConverter.ToInt32(br.ReadBytes(4).Reverse().ToArray(), 0);
+    var tagoffset = BitConverter.ToInt32(br.ReadBytes(4).Reverse().ToArray(), 0);
     var curpos = br.BaseStream.Position;
-    br.BaseStream.Position = exifstart+tagvalue;
-    var ascii = br.ReadBytes(tagcount);
-    var asciiStr = Encoding.ASCII.GetString(ascii);
+    br.BaseStream.Position = exifstart+ tagoffset;
+    //var ascii = br.ReadBytes(tagcount);
+    //var asciiStr = Encoding.ASCII.GetString(ascii);
 
-    //BinaryPrimitives
+    return (tagformat, tagatalength, 0);
 }
 
 
@@ -56,6 +58,20 @@ void ascii()
 }
 
 
-
+enum TagFormat
+{
+    Byte = 1,
+    AsciiString = 2,
+    UShort = 3,
+    LONG = 4,
+    RATIONAL = 5,
+    SBYTE = 6,
+    UNDEFINED = 7,
+    SSHORT = 8,
+    SLONG = 9,
+    SRATIONAL = 10,
+    FLOAT = 11,
+    DOUBLE = 12
+};
 
 
