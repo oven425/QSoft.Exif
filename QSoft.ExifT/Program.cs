@@ -54,6 +54,16 @@ void ParseTiff()
     {
         switch(oo.format)
         {
+            case TagFormat.RATIONAL:
+                {
+                    br.BaseStream.Position = oo.begin;
+                    var buf = br.ReadBytes(oo.length*8).Reverse();
+                    var v1 = BitConverter.ToUInt32(buf.Take(4).ToArray(), 0);
+                    var v2 = BitConverter.ToUInt32(buf.Skip(4).Take(4).ToArray(), 0);
+                    Console.WriteLine($"{oo.name} : {v1}/{v2}");
+                }
+                break;
+
             case TagFormat.AsciiString:
                 {
                     br.BaseStream.Position = oo.begin;
@@ -64,7 +74,8 @@ void ParseTiff()
             case TagFormat.UShort:
                 {
                     br.BaseStream.Position = oo.begin;
-                    var str = BitConverter.ToUInt16(br.ReadBytes(oo.length*2).ToArray(), 0);
+                    var buf = br.ReadBytes(oo.length * 2);
+                    var str = BitConverter.ToUInt16(br.ReadBytes(oo.length*2).Reverse().ToArray(), 0);
                     Console.WriteLine($"{oo.name} : {str}");
                 }
                 break;
