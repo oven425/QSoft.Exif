@@ -2,8 +2,14 @@
 
 
 using System.Buffers.Binary;
+using System.Drawing;
+using System.Drawing.Imaging;
 using System.IO;
 using System.Text;
+
+var image = new Bitmap(@"../../../54362611843_84a763ea2c_o.jpg");
+var propItems = image.PropertyItems;
+var f = propItems.AsEnumerable().FirstOrDefault(x => x.Id == 0x0112);
 
 
 var stream = System.IO.File.OpenRead("../../../54362611843_84a763ea2c_o.jpg");
@@ -37,9 +43,10 @@ while (true)
 ParseTiff();
 void ParseTiff()
 {
+    long exitoffset = 0;
     //https://www.media.mit.edu/pia/Research/deepview/exif.html
     var enterycount = BitConverter.ToInt16(br.ReadBytes(2).Reverse().ToArray(), 0);
-    List<(TagName name, TagFormat format, int length, long begin)> ll = [];
+    List<(TagName name, TagFormat format, int length, long begin, long offset)> ll = [];
     for(int i=0;i<enterycount;i++)
     {
         var tagname_1 = BitConverter.ToUInt16(br.ReadBytes(2).Reverse().ToArray(), 0);
@@ -47,7 +54,8 @@ void ParseTiff()
         var tagformat = (TagFormat)BitConverter.ToInt16(br.ReadBytes(2).Reverse().ToArray(), 0);
         var tagatalength = BitConverter.ToInt32(br.ReadBytes(4).Reverse().ToArray(), 0);
         var tagoffset = BitConverter.ToInt32(br.ReadBytes(4).Reverse().ToArray(), 0);
-        ll.Add((tagname, tagformat, tagatalength, exifstart + tagoffset));
+        ll.Add((tagname, tagformat, tagatalength, exifstart + tagoffset, exitoffset));
+
     }
 
     foreach(var oo in ll)
@@ -58,12 +66,11 @@ void ParseTiff()
                 {
                     br.BaseStream.Position = oo.begin;
                     var buf = br.ReadBytes(oo.length*8).Reverse();
-                    var v1 = BitConverter.ToUInt32(buf.Take(4).ToArray(), 0);
-                    var v2 = BitConverter.ToUInt32(buf.Skip(4).Take(4).ToArray(), 0);
-                    Console.WriteLine($"{oo.name} : {v1}/{v2}");
+                    var v1 = BitConverter.ToUInt32([.. buf.Take(4)], 0);
+                    var v2 = BitConverter.ToUInt32([.. buf.Skip(4).Take(4)], 0);
+                    System.Diagnostics.Trace.WriteLine($"{oo.name} : {v1}/{v2}");
                 }
                 break;
-
             case TagFormat.AsciiString:
                 {
                     br.BaseStream.Position = oo.begin;
@@ -75,8 +82,13 @@ void ParseTiff()
                 {
                     br.BaseStream.Position = oo.begin;
                     var buf = br.ReadBytes(oo.length * 2);
-                    var str = BitConverter.ToUInt16(br.ReadBytes(oo.length*2).Reverse().ToArray(), 0);
-                    Console.WriteLine($"{oo.name} : {str}");
+                    var str = BitConverter.ToUInt16(buf.Reverse().ToArray(), 0);
+                    System.Diagnostics.Trace.WriteLine($"{oo.name} : {str}");
+                }
+                break;
+            case TagFormat.LONG:
+                {
+
                 }
                 break;
 
