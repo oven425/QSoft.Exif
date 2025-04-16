@@ -53,8 +53,27 @@ void ParseTiff()
         var tagname = (TagName)tagname_1;
         var tagformat = (TagFormat)BitConverter.ToInt16(br.ReadBytes(2).Reverse().ToArray(), 0);
         var tagatalength = BitConverter.ToInt32(br.ReadBytes(4).Reverse().ToArray(), 0);
-        var tagoffset = BitConverter.ToInt32(br.ReadBytes(4).Reverse().ToArray(), 0);
-        ll.Add((tagname, tagformat, tagatalength, exifstart + tagoffset, exitoffset));
+        long vlaueindex = 0;
+        switch (tagformat)
+        {
+            case TagFormat.Byte:
+            case TagFormat.UShort:
+                {
+                    vlaueindex = br.BaseStream.Position;
+                    br.BaseStream.Position = br.BaseStream.Position + 4;
+                }
+                break;
+            default:
+                {
+                    var tagoffset_buf = br.ReadBytes(4);
+                    var tagoffset = BitConverter.ToInt32(tagoffset_buf.Reverse().ToArray(), 0);
+                    vlaueindex = exifstart+ tagoffset;
+                }
+                break;
+        }
+        
+        
+        ll.Add((tagname, tagformat, tagatalength, vlaueindex, exitoffset));
 
     }
 
