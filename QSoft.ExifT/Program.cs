@@ -39,14 +39,18 @@ while (true)
     }
 }
 
-
+var exifoffset = 0;
 ParseTiff();
+if(exifoffset > 0)
+{
+    br.BaseStream.Position = exifstart + exifoffset;
+    ParseTiff();
+}
 void ParseTiff()
 {
-    long exitoffset = 0;
     //https://www.media.mit.edu/pia/Research/deepview/exif.html
     var enterycount = BitConverter.ToInt16(br.ReadBytes(2).Reverse().ToArray(), 0);
-    List<(TagName name, TagFormat format, int length, long begin, long offset)> ll = [];
+    List<(TagName name, TagFormat format, int length, long begin)> ll = [];
     for(int i=0;i<enterycount;i++)
     {
         var tagname_1 = BitConverter.ToUInt16(br.ReadBytes(2).Reverse().ToArray(), 0);
@@ -58,6 +62,7 @@ void ParseTiff()
         {
             case TagFormat.Byte:
             case TagFormat.UShort:
+            case TagFormat.LONG:
                 {
                     vlaueindex = br.BaseStream.Position;
                     br.BaseStream.Position = br.BaseStream.Position + 4;
@@ -71,12 +76,10 @@ void ParseTiff()
                 }
                 break;
         }
-        
-        
-        ll.Add((tagname, tagformat, tagatalength, vlaueindex, exitoffset));
-
+        ll.Add((tagname, tagformat, tagatalength, vlaueindex));
     }
 
+    
     foreach(var oo in ll)
     {
         switch(oo.format)
@@ -107,19 +110,24 @@ void ParseTiff()
                 break;
             case TagFormat.LONG:
                 {
-
+                    
+                    br.BaseStream.Position = oo.begin;
+                    var buf = br.ReadBytes(oo.length * 4);
+                    var str = BitConverter.ToInt32(buf.Reverse().ToArray(), 0);
+                    if (oo.name == TagName.ExifOffset)
+                    {
+                        exifoffset = str;
+                    }
+                    
+                    System.Diagnostics.Trace.WriteLine($"{oo.name} : {str}");
                 }
                 break;
 
         }
     }
-}
-
-
-void ascii()
-{
 
 }
+
 
 
 public enum TagName
@@ -151,6 +159,9 @@ public enum TagName
     ExifVersion = 0x9000,
     DateTimeOriginal = 0x9003,
     DateTimeDigitized = 0x9004,
+    OffsetTime = 0x9010,
+    OffsetTimeOriginal = 0x9011,
+    OffsetTimeDigitized = 0x9012,
     ComponentConfiguration = 0x9101,
     CompressedBitsPerPixel = 0x9102,
     ShutterSpeedValue = 0x9201,
@@ -232,7 +243,18 @@ public enum TagName
     FlashEnergy3 = 0xa20b, // Renamed to avoid conflict
     SpatialFrequencyResponse2 = 0xa20c, // Renamed to avoid conflict
     SubjectLocation3 = 0xa214, // Renamed to avoid conflict
-    ExposureIndex3 = 0xa215 // Renamed to avoid conflict
+    ExposureIndex3 = 0xa215, // Renamed to avoid conflict
+
+    ImageUniqueId = 0xa420,
+    CameraOwnerName = 0xa430,
+    BodySerialNumber = 0xa431,
+    LensSpecification = 0xa432,
+    LensMake = 0xa433,
+    LensModel = 0xa434,
+    LensSerialNumber = 0xa435,
+    OffsetSchema = 0xea1d,
+
+
 }
 
 enum TagFormat
