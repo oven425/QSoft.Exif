@@ -46,6 +46,7 @@ if(exifoffset > 0)
     br.BaseStream.Position = exifstart + exifoffset;
     ParseTiff();
 }
+exifoffset = 0;
 void ParseTiff()
 {
     //https://www.media.mit.edu/pia/Research/deepview/exif.html
@@ -57,26 +58,32 @@ void ParseTiff()
         var tagname = (TagName)tagname_1;
         var tagformat = (TagFormat)BitConverter.ToInt16(br.ReadBytes(2).Reverse().ToArray(), 0);
         var tagatalength = BitConverter.ToInt32(br.ReadBytes(4).Reverse().ToArray(), 0);
-        long vlaueindex = 0;
-        switch (tagformat)
+        var valuelen = tagformat switch
         {
-            case TagFormat.Byte:
-            case TagFormat.UShort:
-            case TagFormat.LONG:
-                {
-                    vlaueindex = br.BaseStream.Position;
-                    br.BaseStream.Position = br.BaseStream.Position + 4;
-                }
-                break;
-            default:
-                {
-                    var tagoffset_buf = br.ReadBytes(4);
-                    var tagoffset = BitConverter.ToInt32(tagoffset_buf.Reverse().ToArray(), 0);
-                    vlaueindex = exifstart+ tagoffset;
-                }
-                break;
+            TagFormat.Byte=>tagatalength,
+            TagFormat.UShort=>2* tagatalength,
+            TagFormat.AsciiString => tagatalength,
+            TagFormat.FLOAT => 4 * tagatalength,
+            TagFormat.LONG => 4 * tagatalength,
+            TagFormat.RATIONAL => 8 * tagatalength,
+            TagFormat.SBYTE => tagatalength,
+            _ =>0
+        };
+        long vlaueindex = 0;
+        if (valuelen <= 4)
+        {
+            vlaueindex = br.BaseStream.Position;
+            br.BaseStream.Position = br.BaseStream.Position + 4;
         }
-        ll.Add((tagname, tagformat, tagatalength, vlaueindex));
+        else
+        {
+            var tagoffset_buf = br.ReadBytes(4);
+            var tagoffset = BitConverter.ToInt32(tagoffset_buf.Reverse().ToArray(), 0);
+            vlaueindex = exifstart + tagoffset;
+        }
+
+
+        ll.Add((tagname, tagformat, valuelen, vlaueindex));
     }
 
     
@@ -87,7 +94,7 @@ void ParseTiff()
             case TagFormat.RATIONAL:
                 {
                     br.BaseStream.Position = oo.begin;
-                    var buf = br.ReadBytes(oo.length*8).Reverse();
+                    var buf = br.ReadBytes(oo.length).Reverse();
                     var v1 = BitConverter.ToUInt32([.. buf.Take(4)], 0);
                     var v2 = BitConverter.ToUInt32([.. buf.Skip(4).Take(4)], 0);
                     System.Diagnostics.Trace.WriteLine($"{oo.name} : {v1}/{v2}");
@@ -103,7 +110,7 @@ void ParseTiff()
             case TagFormat.UShort:
                 {
                     br.BaseStream.Position = oo.begin;
-                    var buf = br.ReadBytes(oo.length * 2);
+                    var buf = br.ReadBytes(oo.length);
                     var str = BitConverter.ToUInt16(buf.Reverse().ToArray(), 0);
                     System.Diagnostics.Trace.WriteLine($"{oo.name} : {str}");
                 }
@@ -112,7 +119,7 @@ void ParseTiff()
                 {
                     
                     br.BaseStream.Position = oo.begin;
-                    var buf = br.ReadBytes(oo.length * 4);
+                    var buf = br.ReadBytes(oo.length);
                     var str = BitConverter.ToInt32(buf.Reverse().ToArray(), 0);
                     if (oo.name == TagName.ExifOffset)
                     {
@@ -125,6 +132,8 @@ void ParseTiff()
 
         }
     }
+
+
 
 }
 
