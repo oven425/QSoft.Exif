@@ -15,7 +15,7 @@ var f = propItems.AsEnumerable().FirstOrDefault(x => x.Id == 0x0112);
 var stream = System.IO.File.OpenRead("../../../54362611843_84a763ea2c_o.jpg");
 
 BinaryReader br = new BinaryReader(stream);
-
+//https://www.strerr.com/tw/exif.html
 //https://www.media.mit.edu/pia/Research/deepview/exif.html
 
 // find APP1
@@ -253,7 +253,7 @@ public enum TagName
     SpatialFrequencyResponse2 = 0xa20c, // Renamed to avoid conflict
     SubjectLocation3 = 0xa214, // Renamed to avoid conflict
     ExposureIndex3 = 0xa215, // Renamed to avoid conflict
-
+    ExposureMode = 0xa402,
     ImageUniqueId = 0xa420,
     CameraOwnerName = 0xa430,
     BodySerialNumber = 0xa431,
